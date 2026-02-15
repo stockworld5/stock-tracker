@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
@@ -12,6 +12,7 @@ import { motion } from "framer-motion";
 
 export default function SignIn() {
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,22 +20,23 @@ export default function SignIn() {
   const [remember, setRemember] = useState(true);
 
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     try {
       const credential = await signInWithEmailAndPassword(auth, email, password);
       const token = await credential.user.getIdToken();
-      await createSession(token);
-      router.replace("/stocks");
+
+      // 🔥 critical fix
+      startTransition(async () => {
+        await createSession(token);
+        router.replace("/stocks");
+      });
+
     } catch (err: any) {
       setError(err.message ?? "Failed to sign in");
-    } finally {
-      setLoading(false);
     }
   }
 
@@ -98,7 +100,7 @@ export default function SignIn() {
             <motion.p
               initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-sm text-red-500"
+              className="text-sm text-red-500 break-words"
             >
               {error}
             </motion.p>
@@ -106,10 +108,10 @@ export default function SignIn() {
 
           <Button
             type="submit"
-            disabled={loading}
+            disabled={isPending}
             className="w-full bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30"
           >
-            {loading ? "Signing in…" : "Sign In"}
+            {isPending ? "Signing in…" : "Sign In"}
           </Button>
 
           <FooterLink

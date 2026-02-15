@@ -1,7 +1,10 @@
-"use client";
-
 import "@/app/globals.css";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
+
+export const metadata = {
+  title: "StockHorizon",
+  description: "Modern stock intelligence platform",
+};
 
 export default function RootLayout({
   children,

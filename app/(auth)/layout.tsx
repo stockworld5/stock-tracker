@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { AnimatePresence, motion } from 'framer-motion';
-import { usePathname } from 'next/navigation';
-import AnimatedBackground from './AnimatedBackground';
+import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
+import { usePathname } from "next/navigation";
+import AnimatedBackground from "./AnimatedBackground";
 
 export default function AuthLayout({
   children,
@@ -13,11 +13,15 @@ export default function AuthLayout({
   const pathname = usePathname();
 
   return (
-    <main className="min-h-screen relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50 flex items-center justify-center">
-      {/* animated blobs */}
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
+      
+      {/* Background */}
       <AnimatedBackground />
 
-      <section className="relative z-10">
+      {/* Width constrained container */}
+      <section className="relative z-10 w-full max-w-md px-6">
+        
+        {/* Logo */}
         <Link
           href="/"
           className="absolute -top-12 left-1/2 -translate-x-1/2 text-blue-600 font-semibold tracking-wide"
@@ -25,20 +29,22 @@ export default function AuthLayout({
           StockHorizon
         </Link>
 
+        {/* Page transition animation */}
         <AnimatePresence mode="wait">
           <motion.div
             key={pathname}
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
+            initial={{ opacity: 0, y: 20, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.98 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
           >
             {children}
           </motion.div>
         </AnimatePresence>
 
+        {/* Footer */}
         <footer className="mt-8 text-center text-xs text-slate-400">
-          <div className="flex justify-center gap-4 mb-2">
+          <div className="mb-2 flex justify-center gap-4">
             <Link href="#">Help</Link>
             <Link href="#">Terms</Link>
             <Link href="#">Privacy</Link>
