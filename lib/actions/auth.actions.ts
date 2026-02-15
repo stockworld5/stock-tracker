@@ -10,9 +10,11 @@ export async function createSession(idToken: string) {
     expiresIn,
   });
 
-  cookies().set("__session", sessionCookie, {
+  const cookieStore = await cookies();
+
+  cookieStore.set("__session", sessionCookie, {
     httpOnly: true,
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: expiresIn / 1000,
     path: "/",
@@ -20,5 +22,6 @@ export async function createSession(idToken: string) {
 }
 
 export async function logout() {
-  cookies().delete("__session");
+  const cookieStore = await cookies();
+  cookieStore.delete("__session");
 }
