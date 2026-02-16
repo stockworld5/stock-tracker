@@ -1,4 +1,4 @@
-import PublicHeader from "@/components/marketing/PublicHeader";
+import PublicHeader from "@/components/PublicHeader";
 import Footer from "@/components/Footer";
 
 export default function MarketingLayout({
