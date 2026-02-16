@@ -1,34 +1,34 @@
 "use client";
 
-import { sendEmailVerification } from "firebase/auth";
+import { sendEmailVerification, onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useEffect, useState } from "react";
 
 export default function EmailVerificationBanner() {
-  const [visible, setVisible] = useState(false);
-  const user = auth.currentUser;
+  const [show, setShow] = useState(false);
+  const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    if (user && !user.emailVerified) {
-      setVisible(true);
-    }
-  }, [user]);
+    return onAuthStateChanged(auth, (user) => {
+      setShow(!!user && !user.emailVerified);
+    });
+  }, []);
 
-  if (!visible || !user) return null;
+  if (!show || !auth.currentUser) return null;
 
   return (
-    <div className="bg-yellow-100 text-yellow-900 px-4 py-3 text-sm flex items-center justify-between">
-      <span>
-        Your email is not verified. Please verify to secure your account.
-      </span>
+    <div className="bg-yellow-500/10 border-b border-yellow-500/30 text-yellow-900 px-4 py-3 text-sm flex justify-between">
+      <span>Please verify your email address.</span>
+
       <button
         onClick={async () => {
-          await sendEmailVerification(user);
-          alert("Verification email sent!");
+          await sendEmailVerification(auth.currentUser!);
+          setSent(true);
+          setTimeout(() => setSent(false), 2500);
         }}
         className="underline font-medium"
       >
-        Resend email
+        {sent ? "Sent!" : "Resend"}
       </button>
     </div>
   );

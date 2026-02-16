@@ -39,34 +39,48 @@ export default function InputField({
       : { value, onChange };
 
   return (
-    <div className="space-y-1">
+    <div className="w-full">
       <label
         htmlFor={name}
-        className="block text-sm font-medium text-slate-500"
+        className="block text-sm font-medium text-muted-foreground mb-1.5"
       >
         {label}
       </label>
 
-      <input
-        id={name}
-        type={type}
-        placeholder={placeholder}
-        disabled={disabled}
-        className={cn(
-          'h-12 w-full rounded-lg px-4 text-base transition will-change-transform',
-          'bg-white text-slate-900 placeholder:text-slate-400',
-          'border border-slate-200',
-          'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20',
-          'focus:translate-y-[-1px]',
-          disabled && 'opacity-50 cursor-not-allowed',
-          error && 'border-red-500 focus:ring-red-500/20',
-          inputClassName
-        )}
-        {...registerProps}
-      />
+      <div className="relative">
+        <input
+          id={name}
+          type={type}
+          placeholder={placeholder}
+          disabled={disabled}
+          className={cn(
+            // layout
+            "w-full h-11 rounded-xl px-4",
+
+            // typography
+            "text-[15px] text-foreground placeholder:text-muted-foreground",
+
+            // base appearance
+            "bg-background border border-border",
+
+            // interaction
+            "outline-none transition-colors duration-150",
+            "focus:border-primary focus:ring-1 focus:ring-primary/40",
+
+            // disabled
+            disabled && "opacity-50 cursor-not-allowed",
+
+            // error
+            error && "border-red-500 focus:ring-red-500/40",
+
+            inputClassName
+          )}
+          {...registerProps}
+        />
+      </div>
 
       {error?.message && (
-        <p className="text-sm text-red-500">{error.message}</p>
+        <p className="text-xs text-red-500 mt-1">{error.message}</p>
       )}
     </div>
   );

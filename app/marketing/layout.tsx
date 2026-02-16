@@ -1,11 +1,16 @@
+import PublicHeader from "@/components/marketing/PublicHeader";
+import Footer from "@/components/Footer";
+
 export default function MarketingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-background text-gray-100">
-      {children}
-    </main>
+    <div className="min-h-screen bg-background text-white">
+      <PublicHeader />
+      <main className="pt-16">{children}</main>
+      <Footer />
+    </div>
   );
 }

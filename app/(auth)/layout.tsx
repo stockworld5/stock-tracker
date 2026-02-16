@@ -12,14 +12,22 @@ export default function AuthLayout({
 }) {
   const pathname = usePathname();
 
+  // pages that should NOT be width constrained
+  const fullWidthRoutes = ["/sign-in", "/sign-up"];
+  const isFullWidth = fullWidthRoutes.includes(pathname);
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
       
       {/* Background */}
       <AnimatedBackground />
 
-      {/* Width constrained container */}
-      <section className="relative z-10 w-full max-w-md px-6">
+      {/* Container now dynamic */}
+      <section
+        className={`relative z-10 w-full px-6 ${
+          isFullWidth ? "max-w-7xl" : "max-w-md"
+        }`}
+      >
         
         {/* Logo */}
         <Link

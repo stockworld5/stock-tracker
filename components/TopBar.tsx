@@ -12,37 +12,50 @@ import {
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function TopBar() {
   const router = useRouter();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background">
-      <div className="flex h-16 items-center px-6 gap-6">
-        <div className="flex-1" />
+    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl">
+      <div className="flex h-12 items-center px-5 gap-4">
 
-        <div className="flex w-full max-w-xl items-center gap-2 rounded-lg border bg-muted/50 px-4 py-2">
-          <Search className="h-4 w-4 opacity-60" />
-          <SearchCommand />
-          <kbd className="hidden sm:block text-xs opacity-60">⌘K</kbd>
+        {/* Left — product identity */}
+        <Link
+          href="/dashboard"
+          className="text-sm font-semibold tracking-tight text-foreground/90 hover:text-foreground transition-colors whitespace-nowrap"
+        >
+          Stock<span className="text-primary">Horizon</span>
+        </Link>
+
+        {/* Search */}
+        <div className="flex flex-1 justify-center">
+          <div className="flex w-full max-w-md items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 hover:border-border transition-colors">
+            <Search className="h-4 w-4 opacity-60" />
+            <SearchCommand />
+            <kbd className="hidden sm:block text-[10px] opacity-50">⌘K</kbd>
+          </div>
         </div>
 
-        <div className="flex flex-1 justify-end items-center gap-4">
-          <button className="rounded-full p-2 hover:bg-muted">
-            <Bell className="h-5 w-5" />
+        {/* Actions */}
+        <div className="flex items-center gap-1">
+
+          <button className="rounded-md p-2 hover:bg-muted/60 transition">
+            <Bell className="h-4.5 w-4.5 opacity-80" />
           </button>
 
           <button
             onClick={() => router.push("/settings")}
-            className="rounded-full p-2 hover:bg-muted"
+            className="rounded-md p-2 hover:bg-muted/60 transition"
           >
-            <Settings className="h-5 w-5" />
+            <Settings className="h-4.5 w-4.5 opacity-80" />
           </button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="rounded-full focus:outline-none">
-                <Avatar className="h-8 w-8">
+              <button className="rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <Avatar className="h-7 w-7">
                   <AvatarFallback>Y</AvatarFallback>
                 </Avatar>
               </button>
@@ -57,6 +70,7 @@ export default function TopBar() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
         </div>
       </div>
     </header>
