@@ -24,16 +24,13 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
-      // not logged in
       if (!u) {
         router.replace("/sign-in");
         return;
       }
 
-      // 🔥 WAIT FOR FIREBASE TO FULLY LOAD USER
       await u.reload();
 
-      // sometimes email still null for a tick → wait until available
       if (!u.email) {
         setTimeout(() => {
           setUser({ ...auth.currentUser! });
@@ -44,7 +41,6 @@ export default function SettingsPage() {
         setLoading(false);
       }
 
-      // fetch profile AFTER auth ready
       const snap = await getDoc(doc(db, "users", u.uid));
       if (snap.exists()) setProfile(snap.data());
     });
