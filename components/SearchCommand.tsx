@@ -17,17 +17,50 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { useDebounce } from "@/hooks/useDebounce";
 import WatchlistButton from "@/components/WatchlistButton";
 
+/* ============================================================
+   TYPES (single canonical format used by UI)
+============================================================ */
+
+export type StockWithWatchlistStatus = {
+  symbol: string;
+  name: string;
+  exchange: string;
+  type: string;
+};
+
+/* ============================================================
+   NORMALIZER
+   Converts Finnhub results -> UI stock format
+============================================================ */
+
+function normalizeStock(raw: any): StockWithWatchlistStatus {
+  return {
+    symbol: raw.symbol ?? raw.displaySymbol ?? "",
+    name:
+      raw.name ??
+      raw.description ??
+      raw.displaySymbol ??
+      raw.symbol ??
+      "Unknown",
+    exchange: raw.exchange ?? raw.mic ?? "US",
+    type: raw.type ?? "Common Stock",
+  };
+}
+
+/* ============================================================
+   CONSTANTS
+============================================================ */
+
 const US_EXCHANGES = ["NYSE", "NASDAQ", "NYSE ARCA"];
 
-// 🔥 fallback popular stocks (always show something)
-const POPULAR_STOCKS = [
-  { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ" },
-  { symbol: "MSFT", name: "Microsoft Corp.", exchange: "NASDAQ" },
-  { symbol: "NVDA", name: "NVIDIA Corp.", exchange: "NASDAQ" },
-  { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ" },
-  { symbol: "META", name: "Meta Platforms Inc.", exchange: "NASDAQ" },
-  { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ" },
-  { symbol: "TSLA", name: "Tesla Inc.", exchange: "NASDAQ" },
+const POPULAR_STOCKS: StockWithWatchlistStatus[] = [
+  { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ", type: "Common Stock" },
+  { symbol: "MSFT", name: "Microsoft Corp.", exchange: "NASDAQ", type: "Common Stock" },
+  { symbol: "NVDA", name: "NVIDIA Corp.", exchange: "NASDAQ", type: "Common Stock" },
+  { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ", type: "Common Stock" },
+  { symbol: "META", name: "Meta Platforms Inc.", exchange: "NASDAQ", type: "Common Stock" },
+  { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ", type: "Common Stock" },
+  { symbol: "TSLA", name: "Tesla Inc.", exchange: "NASDAQ", type: "Common Stock" },
 ];
 
 interface SearchCommandProps {
@@ -43,15 +76,17 @@ export default function SearchCommand({
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] =
-    useState<StockWithWatchlistStatus[]>(initialStocks);
+  const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(initialStocks);
   const [watchlist, setWatchlist] = useState<string[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [user, setUser] = useState<User | null>(null);
 
   const isSearchMode = searchTerm.trim().length > 0;
 
-  /* auth + watchlist */
+  /* ============================================================
+     AUTH + WATCHLIST
+  ============================================================ */
+
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
       if (!u) return;
@@ -61,15 +96,20 @@ export default function SearchCommand({
     });
   }, []);
 
-  /* search */
+  /* ============================================================
+     SEARCH
+  ============================================================ */
+
   const handleSearch = async () => {
     if (!isSearchMode) return;
 
     setLoading(true);
     try {
       const results = await searchStocks(searchTerm.trim());
-      setStocks(results || []);
+      setStocks((results || []).map(normalizeStock));
       setActiveIndex(0);
+    } catch {
+      setStocks([]);
     } finally {
       setLoading(false);
     }
@@ -81,26 +121,31 @@ export default function SearchCommand({
     debouncedSearch();
   }, [searchTerm]);
 
-  /* US priority */
+  /* ============================================================
+     SORT US FIRST
+  ============================================================ */
+
   const sortedStocks = [...stocks].sort((a, b) => {
     const aUS = US_EXCHANGES.includes(a.exchange);
     const bUS = US_EXCHANGES.includes(b.exchange);
     return Number(bUS) - Number(aUS);
   });
 
-  /* ⭐ FINAL DISPLAY LOGIC */
+  /* ============================================================
+     DISPLAY LOGIC
+  ============================================================ */
+
   const displayStocks: StockWithWatchlistStatus[] = isSearchMode
     ? sortedStocks
     : [
-        // watchlist first
         ...sortedStocks.filter((s) => watchlist.includes(s.symbol)),
-        // then popular fallback
-        ...POPULAR_STOCKS.filter(
-          (p) => !watchlist.includes(p.symbol)
-        ),
+        ...POPULAR_STOCKS.filter((p) => !watchlist.includes(p.symbol)),
       ].slice(0, 10);
 
-  /* ⌘K */
+  /* ============================================================
+     HOTKEY ⌘K
+  ============================================================ */
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -112,13 +157,13 @@ export default function SearchCommand({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  /* click outside */
+  /* ============================================================
+     CLICK OUTSIDE
+  ============================================================ */
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
@@ -126,7 +171,10 @@ export default function SearchCommand({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  /* keyboard nav */
+  /* ============================================================
+     KEYBOARD NAVIGATION
+  ============================================================ */
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!displayStocks.length) return;
 
@@ -137,14 +185,13 @@ export default function SearchCommand({
 
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((i) =>
-        i === 0 ? displayStocks.length - 1 : i - 1
-      );
+      setActiveIndex((i) => (i === 0 ? displayStocks.length - 1 : i - 1));
     }
 
     if (e.key === "Enter") {
       e.preventDefault();
       const selected = displayStocks[activeIndex];
+      if (!selected) return;
       close();
       router.push(`/stocks/${selected.symbol}`);
     }
@@ -157,9 +204,12 @@ export default function SearchCommand({
     setActiveIndex(0);
   };
 
+  /* ============================================================
+     UI
+  ============================================================ */
+
   return (
     <div ref={containerRef} className="relative w-[520px]">
-      {/* trigger */}
       <div
         onClick={() => setOpen(true)}
         className="flex h-11 items-center gap-2 rounded-md border bg-muted px-4 text-sm text-muted-foreground cursor-pointer"
@@ -212,9 +262,7 @@ export default function SearchCommand({
                         </div>
                       </Link>
 
-                      {user && (
-                        <WatchlistButton symbol={stock.symbol} />
-                      )}
+                      {user && <WatchlistButton symbol={stock.symbol} />}
                     </div>
                   );
                 })}

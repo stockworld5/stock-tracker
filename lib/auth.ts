@@ -1,8 +1,13 @@
 import { cookies } from "next/headers";
 import { adminAuth } from "./firebase-admin";
 
+/**
+ * Returns decoded Firebase session user or null
+ */
 export async function getCurrentUser() {
-  const token = cookies().get("__session")?.value;
+  const cookieStore = await cookies(); // <-- FIX (await required)
+
+  const token = cookieStore.get("__session")?.value;
   if (!token) return null;
 
   try {
@@ -13,6 +18,9 @@ export async function getCurrentUser() {
   }
 }
 
+/**
+ * Throws if user not authenticated (server usage)
+ */
 export async function requireAuth() {
   const user = await getCurrentUser();
   if (!user) throw new Error("UNAUTHORIZED");
