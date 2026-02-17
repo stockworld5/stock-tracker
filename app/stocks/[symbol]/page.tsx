@@ -26,11 +26,8 @@ export default async function StockDetails({ params }: StockDetailsProps) {
           {upperSymbol}
         </h1>
 
-        <WatchlistButton
-          symbol={upperSymbol}
-          company={upperSymbol}
-          isInWatchlist={false}
-        />
+        {/* FIXED — only pass symbol */}
+        <WatchlistButton symbol={upperSymbol} />
       </div>
 
       <TradingViewWidget

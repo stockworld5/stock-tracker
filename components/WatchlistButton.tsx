@@ -11,7 +11,13 @@ import {
   isInWatchlist,
 } from "@/lib/watchlist";
 
-export default function WatchlistButton({ symbol }: { symbol: string }) {
+type Props = {
+  symbol: string;
+};
+
+export default function WatchlistButton({ symbol }: Props) {
+  const normalizedSymbol = symbol.toUpperCase();
+
   const [user, setUser] = useState<User | null>(null);
   const [active, setActive] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -20,7 +26,11 @@ export default function WatchlistButton({ symbol }: { symbol: string }) {
   /* ---------------- AUTH + INITIAL STATE ---------------- */
 
   useEffect(() => {
+    let mounted = true;
+
     const unsub = onAuthStateChanged(auth, async (u) => {
+      if (!mounted) return;
+
       setUser(u ?? null);
 
       if (!u) {
@@ -29,17 +39,20 @@ export default function WatchlistButton({ symbol }: { symbol: string }) {
       }
 
       try {
-        const exists = await isInWatchlist(u.uid, symbol);
-        setActive(exists);
+        const exists = await isInWatchlist(u.uid, normalizedSymbol);
+        if (mounted) setActive(exists);
       } catch {
-        setActive(false);
+        if (mounted) setActive(false);
       }
 
-      setLoading(false);
+      if (mounted) setLoading(false);
     });
 
-    return () => unsub();
-  }, [symbol]);
+    return () => {
+      mounted = false;
+      unsub();
+    };
+  }, [normalizedSymbol]);
 
   /* ---------------- TOGGLE ---------------- */
 
@@ -56,11 +69,11 @@ export default function WatchlistButton({ symbol }: { symbol: string }) {
 
     try {
       if (next) {
-        await addToWatchlist(user.uid, symbol);
+        await addToWatchlist(user.uid, normalizedSymbol);
       } else {
-        await removeFromWatchlist(user.uid, symbol);
+        await removeFromWatchlist(user.uid, normalizedSymbol);
       }
-    } catch (e) {
+    } catch {
       // rollback on failure
       setActive(previous);
     } finally {
