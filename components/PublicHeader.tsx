@@ -45,7 +45,7 @@ export default function PublicHeader() {
             Sign in
           </Link>
 
-          <Link href="/dashboard">
+          <Link href="/stocks">
             <Button className="h-9 rounded-full bg-white text-blue-700 hover:bg-white/90 px-5 font-semibold">
               Dashboard Login
             </Button>

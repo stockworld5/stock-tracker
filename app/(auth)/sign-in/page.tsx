@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   signInWithEmailAndPassword,
@@ -28,7 +28,7 @@ function friendlyAuthError(message?: string) {
 
 export default function SignIn() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,18 +47,20 @@ export default function SignIn() {
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsPending(true);
 
     try {
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
       const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
       const token = await cred.user.getIdToken();
 
-      startTransition(async () => {
-        await createSession(token);
-        router.replace("/stocks");
-      });
+      await createSession(token);
+      router.replace("/stocks");
+      router.refresh();
     } catch (err: any) {
       setError(friendlyAuthError(err?.code || err?.message));
+    } finally {
+      setIsPending(false);
     }
   }
 

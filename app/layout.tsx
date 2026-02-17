@@ -1,8 +1,9 @@
 import "@/app/globals.css";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
-import SupportWidget from "@/components/support/SupportWidget";
+import ClientSupportWidget from "./ClientSupportWidget";
+import type { Metadata } from "next";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "StockHorizon",
   description: "Modern stock intelligence platform",
 };
@@ -17,9 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background text-foreground antialiased">
         <EmailVerificationBanner />
         {children}
-
-        {/* Global Support Chat */}
-        <SupportWidget />
+        <ClientSupportWidget />
       </body>
     </html>
   );

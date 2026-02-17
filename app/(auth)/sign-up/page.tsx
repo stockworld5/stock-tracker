@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   createUserWithEmailAndPassword,
@@ -25,7 +25,7 @@ function friendlyAuthError(message?: string) {
 
 export default function SignUp() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,6 +45,7 @@ export default function SignUp() {
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setIsPending(true);
 
     try {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
@@ -59,12 +60,13 @@ export default function SignUp() {
 
       const token = await cred.user.getIdToken();
 
-      startTransition(async () => {
-        await createSession(token);
-        router.replace("/stocks");
-      });
+      await createSession(token);
+      router.replace("/stocks");
+      router.refresh();
     } catch (err: any) {
       setError(friendlyAuthError(err?.code || err?.message));
+    } finally {
+      setIsPending(false);
     }
   }
 

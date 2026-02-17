@@ -23,7 +23,7 @@ export default function TopBar() {
 
         {/* Left — product identity */}
         <Link
-          href="/dashboard"
+          href="/stocks"
           className="text-sm font-semibold tracking-tight text-foreground/90 hover:text-foreground transition-colors whitespace-nowrap"
         >
           Stock<span className="text-primary">Horizon</span>

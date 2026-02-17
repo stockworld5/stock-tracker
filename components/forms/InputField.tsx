@@ -8,6 +8,7 @@ interface InputFieldProps {
   label: string;
   type?: string;
   placeholder?: string;
+  autoComplete?: string;
   disabled?: boolean;
 
   register?: any;
@@ -25,6 +26,7 @@ export default function InputField({
   label,
   type = 'text',
   placeholder,
+  autoComplete,
   disabled,
   register,
   validation,
@@ -52,6 +54,7 @@ export default function InputField({
           id={name}
           type={type}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           disabled={disabled}
           className={cn(
             // layout

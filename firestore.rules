@@ -1,0 +1,52 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isConversationOwner(convId) {
+      return isSignedIn()
+        && get(/databases/$(database)/documents/conversations/$(convId)).data.createdByUid == request.auth.uid;
+    }
+
+    match /admins/{uid} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == uid);
+      allow write: if isAdmin();
+    }
+
+    match /conversations/{convId} {
+      allow create: if isSignedIn()
+        && request.resource.data.createdByUid == request.auth.uid;
+
+      allow read: if isAdmin() || isConversationOwner(convId);
+
+      allow update: if isAdmin() || isConversationOwner(convId);
+
+      allow delete: if isAdmin();
+    }
+
+    match /conversations/{convId}/messages/{messageId} {
+      allow read: if isAdmin() || isConversationOwner(convId);
+
+      allow create: if isAdmin() || isConversationOwner(convId);
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /presence/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /news/{newsId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
