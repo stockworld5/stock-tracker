@@ -1,4 +1,3 @@
-import TopBar from "@/components/TopBar";
 import WelcomeHeader from "@/components/WelcomeHeader";
 import WatchlistSection from "@/components/WatchlistSection";
 import TradingViewWidget from "@/components/TradingViewWidget";
@@ -20,7 +19,6 @@ const TRADING_VIEW_SCRIPTS = {
 export default function StocksPage() {
   return (
     <div className="min-h-screen bg-background">
-      <TopBar />
 
       <main className="mx-auto w-full max-w-[1400px] space-y-6 p-4 sm:p-6">
         <WelcomeHeader title="Stock Panel" />

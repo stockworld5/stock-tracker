@@ -2,23 +2,10 @@
 
 import { motion } from "framer-motion";
 import { ChevronDown, Sparkles, ShieldCheck, Zap } from "lucide-react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
-const TICKERS = [
-  { sym: "AAPL", pct: "+1.42%", dir: "up" },
-  { sym: "NVDA", pct: "+2.11%", dir: "up" },
-  { sym: "TSLA", pct: "-0.64%", dir: "down" },
-  { sym: "MSFT", pct: "+0.37%", dir: "up" },
-  { sym: "SPY", pct: "+0.52%", dir: "up" },
-  { sym: "QQQ", pct: "+0.81%", dir: "up" },
-  { sym: "BTC", pct: "+1.96%", dir: "up" },
-  { sym: "ETH", pct: "-0.28%", dir: "down" },
-  { sym: "EUR/USD", pct: "+0.12%", dir: "up" },
-];
-
 function MiniCandleWave() {
-  // lightweight SVG “ghost chart” that feels stocky without a chart lib
   return (
     <svg
       aria-hidden
@@ -62,12 +49,6 @@ function MiniCandleWave() {
 export default function HomeHero() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const tickerRow = useMemo(() => {
-    // duplicate so the marquee looks continuous
-    const row = [...TICKERS, ...TICKERS, ...TICKERS];
-    return row;
-  }, []);
-
   useEffect(() => {
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
@@ -100,7 +81,6 @@ export default function HomeHero() {
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // soft vignette
       const g = ctx.createRadialGradient(
         canvas.width * 0.5,
         canvas.height * 0.35,
@@ -121,7 +101,6 @@ export default function HomeHero() {
         if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
         if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
-        // link lines
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
@@ -137,7 +116,6 @@ export default function HomeHero() {
           }
         }
 
-        // mouse repulsion
         const mdx = p.x - mouse.x;
         const mdy = p.y - mouse.y;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
@@ -166,21 +144,14 @@ export default function HomeHero() {
 
   return (
     <section className="relative overflow-hidden">
-      {/* base gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800" />
-
-      {/* drifting grid + scanlines + noise (CSS-driven) */}
       <div className="absolute inset-0 bg-hero-grid opacity-[0.35]" />
       <div className="absolute inset-0 bg-scanlines opacity-[0.25]" />
       <div className="absolute inset-0 bg-noise opacity-[0.10]" />
 
-      {/* “ghost chart” */}
       <MiniCandleWave />
-
-      {/* particles canvas */}
       <canvas ref={canvasRef} className="absolute inset-0 z-[1]" />
 
-      {/* content */}
       <div className="relative z-10 mx-auto max-w-6xl px-6 pt-44 pb-44 text-center text-white">
         <motion.div
           initial={{ opacity: 0, y: 14 }}
@@ -220,43 +191,16 @@ export default function HomeHero() {
           transition={{ delay: 0.45, duration: 0.7 }}
           className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
-          <Button className="h-11 px-6 rounded-full bg-white text-blue-700 hover:bg-white/90 shadow-[0_14px_40px_rgba(0,0,0,0.25)]">
+          <Button className="h-11 px-6 rounded-full bg-white text-blue-700 hover:bg-white/90">
             <Zap className="h-4 w-4" />
             View Live Dashboard
           </Button>
-          <Button
-            variant="outline"
-            className="h-11 px-6 rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10"
-          >
+          <Button variant="outline" className="h-11 px-6 rounded-full border-white/20 bg-white/5 text-white hover:bg-white/10">
             <ShieldCheck className="h-4 w-4" />
             See Risk Framework
           </Button>
         </motion.div>
 
-        {/* micro trust chips */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.65, duration: 0.7 }}
-          className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-3"
-        >
-          {[
-            "Realtime alerts",
-            "AI-ranked entries",
-            "Stop/target guidance",
-            "Backtest-ready logic",
-            "Secure infrastructure",
-          ].map((t) => (
-            <span
-              key={t}
-              className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/80 backdrop-blur"
-            >
-              {t}
-            </span>
-          ))}
-        </motion.div>
-
-        {/* chevron */}
         <motion.div
           animate={{ y: [0, 12, 0] }}
           transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
@@ -266,44 +210,6 @@ export default function HomeHero() {
         </motion.div>
       </div>
 
-      {/* ticker tape */}
-      <div className="relative z-20 border-t border-white/10 bg-white/5 backdrop-blur">
-        <div className="mx-auto max-w-7xl overflow-hidden px-6 py-3">
-          <div className="flex items-center gap-4">
-            <span className="text-xs tracking-widest text-white/60">
-              LIVE TAPE
-            </span>
-            <div className="relative flex-1 overflow-hidden">
-              <div className="animate-marquee flex w-max items-center gap-10 whitespace-nowrap">
-                {tickerRow.map((t, idx) => (
-                  <div
-                    key={`${t.sym}-${idx}`}
-                    className="flex items-center gap-2 text-sm text-white/85"
-                  >
-                    <span className="font-semibold">{t.sym}</span>
-                    <span
-                      className={
-                        t.dir === "up"
-                          ? "text-emerald-300"
-                          : "text-rose-300"
-                      }
-                    >
-                      {t.pct}
-                    </span>
-                    <span className="text-white/30">•</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* fade edges */}
-              <div className="pointer-events-none absolute inset-y-0 left-0 w-14 bg-gradient-to-r from-blue-800/70 to-transparent" />
-              <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-gradient-to-l from-blue-800/70 to-transparent" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* wave to next section */}
       <svg
         viewBox="0 0 1440 140"
         className="absolute bottom-0 left-0 w-full translate-y-[1px] z-10"

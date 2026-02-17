@@ -2,26 +2,36 @@
 
 import { Bell, Settings, Search } from "lucide-react";
 import SearchCommand from "@/components/SearchCommand";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { signOut } from "firebase/auth";
+import { signOut, onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function TopBar() {
   const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, setUser);
+  }, []);
+
+  const letter =
+    user?.displayName?.charAt(0)?.toUpperCase() ||
+    user?.email?.charAt(0)?.toUpperCase() ||
+    "?";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-xl">
       <div className="flex h-12 items-center px-5 gap-4">
 
-        {/* Left — product identity */}
         <Link
           href="/stocks"
           className="text-sm font-semibold tracking-tight text-foreground/90 hover:text-foreground transition-colors whitespace-nowrap"
@@ -29,7 +39,6 @@ export default function TopBar() {
           Stock<span className="text-primary">Horizon</span>
         </Link>
 
-        {/* Search */}
         <div className="flex flex-1 justify-center">
           <div className="flex w-full max-w-md items-center gap-2 rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 hover:border-border transition-colors">
             <Search className="h-4 w-4 opacity-60" />
@@ -38,7 +47,6 @@ export default function TopBar() {
           </div>
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-1">
 
           <button className="rounded-md p-2 hover:bg-muted/60 transition">
@@ -56,7 +64,8 @@ export default function TopBar() {
             <DropdownMenuTrigger asChild>
               <button className="rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <Avatar className="h-7 w-7">
-                  <AvatarFallback>Y</AvatarFallback>
+                  {user?.photoURL && <AvatarImage src={user.photoURL} />}
+                  <AvatarFallback>{letter}</AvatarFallback>
                 </Avatar>
               </button>
             </DropdownMenuTrigger>

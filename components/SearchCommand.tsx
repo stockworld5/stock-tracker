@@ -17,76 +17,33 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { useDebounce } from "@/hooks/useDebounce";
 import WatchlistButton from "@/components/WatchlistButton";
 
-/* ============================================================
-   TYPES (single canonical format used by UI)
-============================================================ */
-
-export type StockWithWatchlistStatus = {
-  symbol: string;
-  name: string;
-  exchange: string;
-  type: string;
-};
-
-/* ============================================================
-   NORMALIZER
-   Converts Finnhub results -> UI stock format
-============================================================ */
-
-function normalizeStock(raw: any): StockWithWatchlistStatus {
-  return {
-    symbol: raw.symbol ?? raw.displaySymbol ?? "",
-    name:
-      raw.name ??
-      raw.description ??
-      raw.displaySymbol ??
-      raw.symbol ??
-      "Unknown",
-    exchange: raw.exchange ?? raw.mic ?? "US",
-    type: raw.type ?? "Common Stock",
-  };
-}
-
-/* ============================================================
-   CONSTANTS
-============================================================ */
-
 const US_EXCHANGES = ["NYSE", "NASDAQ", "NYSE ARCA"];
 
-const POPULAR_STOCKS: StockWithWatchlistStatus[] = [
-  { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ", type: "Common Stock" },
-  { symbol: "MSFT", name: "Microsoft Corp.", exchange: "NASDAQ", type: "Common Stock" },
-  { symbol: "NVDA", name: "NVIDIA Corp.", exchange: "NASDAQ", type: "Common Stock" },
-  { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ", type: "Common Stock" },
-  { symbol: "META", name: "Meta Platforms Inc.", exchange: "NASDAQ", type: "Common Stock" },
-  { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ", type: "Common Stock" },
-  { symbol: "TSLA", name: "Tesla Inc.", exchange: "NASDAQ", type: "Common Stock" },
+const POPULAR_STOCKS = [
+  { symbol: "AAPL", name: "Apple Inc.", exchange: "NASDAQ" },
+  { symbol: "MSFT", name: "Microsoft Corp.", exchange: "NASDAQ" },
+  { symbol: "NVDA", name: "NVIDIA Corp.", exchange: "NASDAQ" },
+  { symbol: "GOOGL", name: "Alphabet Inc.", exchange: "NASDAQ" },
+  { symbol: "META", name: "Meta Platforms Inc.", exchange: "NASDAQ" },
+  { symbol: "AMZN", name: "Amazon.com Inc.", exchange: "NASDAQ" },
+  { symbol: "TSLA", name: "Tesla Inc.", exchange: "NASDAQ" },
 ];
 
-interface SearchCommandProps {
-  initialStocks?: StockWithWatchlistStatus[];
-}
-
-export default function SearchCommand({
-  initialStocks = [],
-}: SearchCommandProps) {
+export default function SearchCommand() {
   const router = useRouter();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [stocks, setStocks] = useState<StockWithWatchlistStatus[]>(initialStocks);
+  const [stocks, setStocks] = useState<any[]>([]);
   const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [user, setUser] = useState<User | null>(null);
 
   const isSearchMode = searchTerm.trim().length > 0;
 
-  /* ============================================================
-     AUTH + WATCHLIST
-  ============================================================ */
-
+  /* auth */
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
       if (!u) return;
@@ -96,86 +53,72 @@ export default function SearchCommand({
     });
   }, []);
 
-  /* ============================================================
-     SEARCH
-  ============================================================ */
-
-  const handleSearch = async () => {
+  /* search */
+  const runSearch = async () => {
     if (!isSearchMode) return;
 
     setLoading(true);
     try {
       const results = await searchStocks(searchTerm.trim());
-      setStocks((results || []).map(normalizeStock));
+      setStocks(results || []);
       setActiveIndex(0);
-    } catch {
-      setStocks([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const debouncedSearch = useDebounce(handleSearch, 300);
+  const debounced = useDebounce(runSearch, 300);
 
   useEffect(() => {
-    debouncedSearch();
+    debounced();
   }, [searchTerm]);
 
-  /* ============================================================
-     SORT US FIRST
-  ============================================================ */
-
+  /* sort US first */
   const sortedStocks = [...stocks].sort((a, b) => {
     const aUS = US_EXCHANGES.includes(a.exchange);
     const bUS = US_EXCHANGES.includes(b.exchange);
     return Number(bUS) - Number(aUS);
   });
 
-  /* ============================================================
-     DISPLAY LOGIC
-  ============================================================ */
-
-  const displayStocks: StockWithWatchlistStatus[] = isSearchMode
+  const displayStocks = isSearchMode
     ? sortedStocks
     : [
         ...sortedStocks.filter((s) => watchlist.includes(s.symbol)),
         ...POPULAR_STOCKS.filter((p) => !watchlist.includes(p.symbol)),
       ].slice(0, 10);
 
-  /* ============================================================
-     HOTKEY ⌘K
-  ============================================================ */
-
+  /* ⌘K focus */
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setOpen(true);
+        setTimeout(() => {
+          const input = document.querySelector<HTMLInputElement>(
+            '[cmdk-input]'
+          );
+          input?.focus();
+        }, 10);
       }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  /* ============================================================
-     CLICK OUTSIDE
-  ============================================================ */
-
+  /* click outside */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node))
         setOpen(false);
-      }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  /* ============================================================
-     KEYBOARD NAVIGATION
-  ============================================================ */
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  /* keyboard nav */
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!displayStocks.length) return;
 
     if (e.key === "ArrowDown") {
@@ -185,50 +128,36 @@ export default function SearchCommand({
 
     if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIndex((i) => (i === 0 ? displayStocks.length - 1 : i - 1));
+      setActiveIndex((i) =>
+        i === 0 ? displayStocks.length - 1 : i - 1
+      );
     }
 
     if (e.key === "Enter") {
       e.preventDefault();
-      const selected = displayStocks[activeIndex];
-      if (!selected) return;
-      close();
-      router.push(`/stocks/${selected.symbol}`);
+      const stock = displayStocks[activeIndex];
+      router.push(`/stocks/${stock.symbol}`);
+      setOpen(false);
+      setSearchTerm("");
     }
   };
 
-  const close = () => {
-    setOpen(false);
-    setSearchTerm("");
-    setStocks([]);
-    setActiveIndex(0);
-  };
-
-  /* ============================================================
-     UI
-  ============================================================ */
-
   return (
-    <div ref={containerRef} className="relative w-[520px]">
-      <div
-        onClick={() => setOpen(true)}
-        className="flex h-11 items-center gap-2 rounded-md border bg-muted px-4 text-sm text-muted-foreground cursor-pointer"
-      >
-        Search stocks…
-        <span className="ml-auto text-xs">⌘K</span>
-      </div>
+    <div ref={wrapperRef} className="relative w-[520px]">
+      <Command className="rounded-md border bg-muted">
+        <CommandInput
+          value={searchTerm}
+          onValueChange={(v) => {
+            setSearchTerm(v);
+            setOpen(true);
+          }}
+          onKeyDown={onKeyDown}
+          placeholder="Search stocks...   ⌘K"
+          className="h-11"
+        />
 
-      {open && (
-        <div className="absolute left-0 top-[52px] z-50 w-full rounded-md border bg-background shadow-lg">
-          <Command>
-            <CommandInput
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-              onKeyDown={handleKeyDown}
-              placeholder="Search stocks..."
-              autoFocus
-            />
-
+        {open && (
+          <div className="absolute left-0 top-12 z-50 w-full rounded-md border bg-background shadow-lg">
             <CommandList>
               {loading && (
                 <CommandEmpty className="flex items-center gap-2">
@@ -239,18 +168,18 @@ export default function SearchCommand({
 
               {!loading &&
                 displayStocks.map((stock, index) => {
-                  const isActive = index === activeIndex;
+                  const active = index === activeIndex;
 
                   return (
                     <div
                       key={stock.symbol}
                       className={`flex items-center gap-3 px-3 py-2 ${
-                        isActive ? "bg-muted" : "hover:bg-muted"
+                        active ? "bg-muted" : "hover:bg-muted"
                       }`}
                     >
                       <Link
                         href={`/stocks/${stock.symbol}`}
-                        onClick={close}
+                        onClick={() => setOpen(false)}
                         className="flex flex-1 items-center gap-3"
                       >
                         <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -267,9 +196,9 @@ export default function SearchCommand({
                   );
                 })}
             </CommandList>
-          </Command>
-        </div>
-      )}
+          </div>
+        )}
+      </Command>
     </div>
   );
 }

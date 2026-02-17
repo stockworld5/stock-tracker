@@ -11,11 +11,7 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
-import {
-  ArrowLeft,
-  CheckCircle,
-  LogOut,
-} from "lucide-react";
+import { ArrowLeft, LogOut } from "lucide-react";
 
 import SettingsForm from "./settings-form";
 
@@ -26,39 +22,48 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🔐 AUTH GUARD
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
+      // not logged in
       if (!u) {
         router.replace("/sign-in");
         return;
       }
 
-      setUser(u);
+      // 🔥 WAIT FOR FIREBASE TO FULLY LOAD USER
+      await u.reload();
 
-      const snap = await getDoc(doc(db, "users", u.uid));
-      if (snap.exists()) {
-        setProfile(snap.data());
+      // sometimes email still null for a tick → wait until available
+      if (!u.email) {
+        setTimeout(() => {
+          setUser({ ...auth.currentUser! });
+          setLoading(false);
+        }, 150);
+      } else {
+        setUser(u);
+        setLoading(false);
       }
 
-      setLoading(false);
+      // fetch profile AFTER auth ready
+      const snap = await getDoc(doc(db, "users", u.uid));
+      if (snap.exists()) setProfile(snap.data());
     });
 
     return () => unsub();
   }, [router]);
 
   async function handleSave(data: any) {
-    if (!user) return;
+    if (!auth.currentUser) return;
 
-    await updateProfile(user, {
+    await updateProfile(auth.currentUser, {
       displayName: data.username,
     });
 
     await setDoc(
-      doc(db, "users", user.uid),
+      doc(db, "users", auth.currentUser.uid),
       {
         ...data,
-        email: user.email,
+        email: auth.currentUser.email ?? "",
         updatedAt: new Date(),
       },
       { merge: true }
@@ -71,11 +76,7 @@ export default function SettingsPage() {
   }
 
   if (loading || !user) {
-    return (
-      <div className="p-10 text-muted-foreground">
-        Loading…
-      </div>
-    );
+    return <div className="p-10 text-muted-foreground">Loading…</div>;
   }
 
   return (
@@ -84,7 +85,6 @@ export default function SettingsPage() {
       animate={{ opacity: 1, y: 0 }}
       className="max-w-3xl mx-auto px-6 py-10 space-y-8"
     >
-      {/* HEADER */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => router.push("/stocks")}
@@ -95,17 +95,10 @@ export default function SettingsPage() {
         </button>
       </div>
 
-      <h1 className="text-2xl font-semibold">
-        Settings
-      </h1>
+      <h1 className="text-2xl font-semibold">Settings</h1>
 
-      <SettingsForm
-        user={user}
-        profile={profile}
-        onSave={handleSave}
-      />
+      <SettingsForm user={user} profile={profile} onSave={handleSave} />
 
-      {/* LOGOUT */}
       <div className="flex justify-end pt-4">
         <button
           onClick={handleLogout}

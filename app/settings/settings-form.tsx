@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/client";
 import {
   sendPasswordResetEmail,
@@ -9,6 +9,7 @@ import {
 import AccentColorPicker from "@/components/AccentColorPicker";
 import DeleteAccountButton from "@/components/DeleteAccountButton";
 import CountrySelectField from "@/components/forms/CountrySelectField";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import { CheckCircle, Mail } from "lucide-react";
 
 export default function SettingsForm({
@@ -20,16 +21,35 @@ export default function SettingsForm({
   profile: any;
   onSave: (data: any) => Promise<void>;
 }) {
-  const [username, setUsername] = useState(profile?.username ?? "");
-  const [country, setCountry] = useState(profile?.country ?? "");
-  const [phone, setPhone] = useState(profile?.phone ?? "");
 
+  /* ------------------- profile fields ------------------- */
+  const [username, setUsername] = useState("");
+  const [country, setCountry] = useState("");
+  const [phone, setPhone] = useState("");
+
+  /* ------------------- avatar state (NEW) ------------------- */
+  const [avatar, setAvatar] = useState(user?.photoURL ?? "");
+
+  /* ------------------- ui states ------------------- */
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [sendingReset, setSendingReset] = useState(false);
   const [sendingVerify, setSendingVerify] = useState(false);
+
+  /* hydrate profile */
+  useEffect(() => {
+    if (!profile) return;
+    setUsername(profile.username || "");
+    setCountry(profile.country || "");
+    setPhone(profile.phone || "");
+  }, [profile]);
+
+  /* sync avatar when firebase user changes */
+  useEffect(() => {
+    setAvatar(user?.photoURL ?? "");
+  }, [user]);
 
   async function handleSave() {
     setSaving(true);
@@ -41,6 +61,7 @@ export default function SettingsForm({
   }
 
   async function handlePasswordReset() {
+    if (!user?.email) return;
     setSendingReset(true);
     await sendPasswordResetEmail(auth, user.email);
     setSendingReset(false);
@@ -55,6 +76,8 @@ export default function SettingsForm({
 
   return (
     <div className="space-y-10">
+
+      {/* EMAIL VERIFY */}
       {!user.emailVerified && (
         <div className="flex items-center justify-between rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4">
           <div className="flex items-center gap-2 text-sm">
@@ -71,6 +94,23 @@ export default function SettingsForm({
         </div>
       )}
 
+      {/* AVATAR */}
+      <section className="bg-card border rounded-xl p-6 space-y-4">
+        <h2 className="font-medium">Profile picture</h2>
+
+        <ProfileAvatar
+          uid={user.uid}
+          onUploaded={(url) => {
+            setAvatar(url);
+
+            // instantly mutate firebase user object in memory
+            if (user) user.photoURL = url;
+          }}
+        />
+
+      </section>
+
+      {/* PROFILE */}
       <section className="bg-card border rounded-xl p-6 space-y-4">
         <h2 className="font-medium">Profile</h2>
 
@@ -83,18 +123,16 @@ export default function SettingsForm({
 
         <input
           disabled
-          value={user.email}
+          value={user.email ?? ""}
           className="w-full border rounded-lg px-4 py-2 bg-muted"
         />
       </section>
 
+      {/* LOCATION */}
       <section className="bg-card border rounded-xl p-6 space-y-4">
         <h2 className="font-medium">Location</h2>
 
-        <CountrySelectField
-          value={country}
-          onChange={setCountry}
-        />
+        <CountrySelectField value={country} onChange={setCountry} />
 
         <input
           value={phone}
@@ -104,6 +142,7 @@ export default function SettingsForm({
         />
       </section>
 
+      {/* ACCOUNT */}
       <section className="bg-card border rounded-xl p-6 space-y-4">
         <h2 className="font-medium">Account</h2>
         <button
@@ -114,11 +153,13 @@ export default function SettingsForm({
         </button>
       </section>
 
+      {/* APPEARANCE */}
       <section className="bg-card border rounded-xl p-6 space-y-4">
         <h2 className="font-medium">Appearance</h2>
         <AccentColorPicker />
       </section>
 
+      {/* SAVE */}
       <div className="flex justify-between items-center">
         <button
           onClick={handleSave}
@@ -136,27 +177,23 @@ export default function SettingsForm({
         )}
       </div>
 
+      {/* DELETE */}
       <section className="border border-destructive/40 rounded-xl p-6 space-y-2">
-        <h2 className="font-medium text-destructive">
-          Danger Zone
-        </h2>
+        <h2 className="font-medium text-destructive">Danger Zone</h2>
         <DeleteAccountButton />
       </section>
 
+      {/* PASSWORD MODAL */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="w-full max-w-sm rounded-xl bg-background p-6 space-y-4">
-            <h3 className="text-lg font-semibold">
-              Reset password
-            </h3>
+            <h3 className="text-lg font-semibold">Reset password</h3>
 
             <p className="text-sm text-muted-foreground">
               We’ll send a password reset link to:
             </p>
 
-            <p className="text-sm font-medium">
-              {user.email}
-            </p>
+            <p className="text-sm font-medium">{user.email ?? "No email"}</p>
 
             <div className="flex justify-end gap-3">
               <button
@@ -167,7 +204,7 @@ export default function SettingsForm({
               </button>
               <button
                 onClick={handlePasswordReset}
-                disabled={sendingReset}
+                disabled={sendingReset || !user.email}
                 className="rounded bg-primary px-4 py-2 text-primary-foreground text-sm"
               >
                 {sendingReset ? "Sending…" : "Send reset"}

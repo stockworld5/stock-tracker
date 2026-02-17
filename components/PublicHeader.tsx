@@ -39,13 +39,13 @@ export default function PublicHeader() {
         {/* Actions */}
         <div className="flex items-center gap-4">
           <Link
-            href="/sign-in"
+            href="/sign-up"
             className="text-sm text-white/80 hover:text-white transition-colors"
           >
-            Sign in
+            Sign up
           </Link>
 
-          <Link href="/stocks">
+          <Link href="/sign-in">
             <Button className="h-9 rounded-full bg-white text-blue-700 hover:bg-white/90 px-5 font-semibold">
               Dashboard Login
             </Button>

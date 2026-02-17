@@ -2,52 +2,53 @@ import { db } from "@/lib/firebase/client";
 import {
   doc,
   getDoc,
+  getDocs,
   setDoc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
+  deleteDoc,
+  collection,
 } from "firebase/firestore";
 
 /**
  * Firestore structure:
- * users/{uid} {
- *   watchlist: string[]
- * }
+ *
+ * watchlists/{uid}/stocks/{symbol}
  */
 
-export async function getWatchlist(uid: string): Promise<string[]> {
-  const ref = doc(db, "users", uid);
-  const snap = await getDoc(ref);
-
-  if (!snap.exists()) return [];
-
-  return snap.data().watchlist || [];
+function stockRef(uid: string, symbol: string) {
+  return doc(db, "watchlists", uid, "stocks", symbol);
 }
+
+function stocksCollection(uid: string) {
+  return collection(db, "watchlists", uid, "stocks");
+}
+
+/* ---------------- GET LIST ---------------- */
+
+export async function getWatchlist(uid: string): Promise<string[]> {
+  const snap = await getDocs(stocksCollection(uid));
+  return snap.docs.map((d) => d.id);
+}
+
+/* ---------------- ADD ---------------- */
 
 export async function addToWatchlist(uid: string, symbol: string) {
-  const ref = doc(db, "users", uid);
-
-  await setDoc(
-    ref,
-    {
-      watchlist: arrayUnion(symbol),
-    },
-    { merge: true }
-  );
-}
-
-export async function removeFromWatchlist(uid: string, symbol: string) {
-  const ref = doc(db, "users", uid);
-
-  await updateDoc(ref, {
-    watchlist: arrayRemove(symbol),
+  await setDoc(stockRef(uid, symbol), {
+    addedAt: Date.now(),
   });
 }
+
+/* ---------------- REMOVE ---------------- */
+
+export async function removeFromWatchlist(uid: string, symbol: string) {
+  await deleteDoc(stockRef(uid, symbol));
+}
+
+/* ---------------- CHECK ---------------- */
 
 export async function isInWatchlist(
   uid: string,
   symbol: string
 ): Promise<boolean> {
-  const list = await getWatchlist(uid);
-  return list.includes(symbol);
+  const snap = await getDoc(stockRef(uid, symbol));
+  return snap.exists();
 }
