@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabase/client";
+import { getSupabaseClient } from "@/lib/supabase/client";
 import { auth, db } from "@/lib/firebase/client";
 import { doc, setDoc } from "firebase/firestore";
 import { updateProfile } from "firebase/auth";
@@ -22,6 +22,8 @@ export default function ProfileAvatar({
     try {
       setUploading(true);
 
+      const supabase = getSupabaseClient();
+
       const fileExt = file.name.split(".").pop();
       const fileName = `${uid}/avatar.${fileExt}`;
 
@@ -37,7 +39,7 @@ export default function ProfileAvatar({
         .from("avatars")
         .getPublicUrl(fileName);
 
-      const url = data.publicUrl + `?t=${Date.now()}`; // bust cache
+      const url = data.publicUrl + `?t=${Date.now()}`;
 
       // update firebase auth
       await updateProfile(auth.currentUser, { photoURL: url });
@@ -50,7 +52,6 @@ export default function ProfileAvatar({
         { merge: true }
       );
 
-      // notify parent instantly
       onUploaded?.(url);
 
     } catch (err) {
