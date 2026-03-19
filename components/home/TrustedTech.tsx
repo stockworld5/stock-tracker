@@ -75,7 +75,7 @@ export default function TrustedTech() {
               transition={{ duration: 0.6 }}
             >
               <p className="text-xs tracking-[0.32em] text-white/55">
-                TRUSTED TECHNOLOGY
+                TRUSTED TECHNOLOGY USED
               </p>
 
               <h3 className="mt-4 text-3xl font-bold tracking-tight">
@@ -99,7 +99,7 @@ export default function TrustedTech() {
                     {uptime.toFixed(2)}%
                   </div>
                   <div className="mt-1 text-xs text-white/45">
-                    trailing 30 days
+                    Trailing 30 days
                   </div>
                 </div>
 
@@ -123,7 +123,7 @@ export default function TrustedTech() {
                     {events.toFixed(1)}M
                   </div>
                   <div className="mt-1 text-xs text-white/45">
-                    processing bus
+                    Processing bus
                   </div>
                 </div>
               </div>
@@ -140,7 +140,7 @@ export default function TrustedTech() {
               <div className="rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold tracking-widest text-white/70">
-                    VERIFIED STACK
+                    Integrations
                   </p>
                   <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.9)]" />
                 </div>
@@ -161,22 +161,22 @@ export default function TrustedTech() {
 
                 <div className="mt-8 rounded-2xl border border-white/10 bg-black/20 p-4 font-mono text-[12px] text-white/70">
                   <div className="flex items-center justify-between">
-                    <span className="text-white/55">status</span>
-                    <span className="text-emerald-300">operational</span>
+                    <span className="text-white/55">Status</span>
+                    <span className="text-emerald-300">Operational</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-white/55">deploy</span>
-                    <span className="text-blue-200">rolling</span>
+                    <span className="text-white/55">Deploy</span>
+                    <span className="text-blue-200">Rolling</span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
-                    <span className="text-white/55">security</span>
-                    <span className="text-white/80">encryption • audit</span>
+                    <span className="text-white/55">Security</span>
+                    <span className="text-white/80">Sncryption • Audit</span>
                   </div>
                 </div>
               </div>
 
               <p className="mt-6 text-center text-xs text-white/45">
-                The credibility section now looks like a real platform — not a footer.
+                Trusted by developers worldwide
               </p>
             </motion.div>
           </div>
