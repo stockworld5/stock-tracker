@@ -3,6 +3,7 @@
 import "@/app/globals.css";
 import SupportWidget from "@/components/support/SupportWidget";
 import BetaGate from "@/components/BetaGate";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default function RootLayout({
   children,
@@ -21,6 +22,9 @@ export default function RootLayout({
 
         {/* 🔥 SUPPORT — GLOBAL FLOATING CHAT */}
         <SupportWidget />
+
+        {/* ⚡ VERCEL SPEED INSIGHTS */}
+        <SpeedInsights />
 
       </body>
     </html>
