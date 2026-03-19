@@ -2,6 +2,7 @@
 
 import "@/app/globals.css";
 import SupportWidget from "@/components/support/SupportWidget";
+import BetaGate from "@/components/BetaGate";
 
 export default function RootLayout({
   children,
@@ -12,11 +13,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
 
+        {/* 🚧 BETA / TERMS GATE */}
+        <BetaGate />
+
         {/* page content */}
         {children}
 
         {/* 🔥 SUPPORT — GLOBAL FLOATING CHAT */}
         <SupportWidget />
+
       </body>
     </html>
   );
