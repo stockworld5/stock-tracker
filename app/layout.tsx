@@ -1,8 +1,7 @@
-"use client";
-
 import "@/app/globals.css";
-import SupportWidget from "@/components/support/SupportWidget";
+import DeferredSupportWidget from "@/components/support/DeferredSupportWidget";
 import BetaGate from "@/components/BetaGate";
+import AnnouncementBar from "@/components/AnnouncementBar";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -18,11 +17,14 @@ export default function RootLayout({
         {/* 🚧 BETA / TERMS GATE */}
         <BetaGate />
 
+        {/* 🔔 GLOBAL ANNOUNCEMENT BAR */}
+        <AnnouncementBar />
+
         {/* page content */}
         {children}
 
         {/* 🔥 SUPPORT — GLOBAL FLOATING CHAT */}
-        <SupportWidget />
+        <DeferredSupportWidget />
 
         {/* ⚡ VERCEL ANALYTICS */}
         <Analytics />

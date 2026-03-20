@@ -12,9 +12,27 @@ export default function AuthLayout({
 }) {
   const pathname = usePathname();
 
-  // pages that should NOT be width constrained
-  const fullWidthRoutes = ["/sign-in", "/sign-up"];
-  const isFullWidth = fullWidthRoutes.includes(pathname);
+  const isImmersiveRoute = pathname === "/sign-up";
+  const isWideRoute = pathname === "/sign-in";
+
+  if (isImmersiveRoute) {
+    return (
+      <main className="relative min-h-[100svh] w-full overflow-x-clip">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={pathname}
+            initial={{ opacity: 0, y: 12, scale: 0.995 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -12, scale: 0.995 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="min-h-[100svh]"
+          >
+            {children}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+    );
+  }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50">
@@ -25,7 +43,7 @@ export default function AuthLayout({
       {/* Container now dynamic */}
       <section
         className={`relative z-10 w-full px-6 ${
-          isFullWidth ? "max-w-7xl" : "max-w-md"
+          isWideRoute ? "max-w-7xl" : "max-w-md"
         }`}
       >
         

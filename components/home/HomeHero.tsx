@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, Sparkles, ShieldCheck, Zap } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -46,104 +46,198 @@ function MiniCandleWave() {
   );
 }
 
+type Particle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  r: number;
+};
+
 export default function HomeHero() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-    let raf: number;
+    if (reduceMotion) return;
 
-    const resize = () => {
-      const section = canvas.parentElement as HTMLElement;
-      canvas.width = section.offsetWidth;
-      canvas.height = section.offsetHeight;
-    };
+    const canvas = canvasRef.current;
+    const section = sectionRef.current;
+    if (!canvas || !section) return;
 
-    resize();
-    window.addEventListener("resize", resize);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const particles = Array.from({ length: 70 }).map(() => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.22,
-      vy: (Math.random() - 0.5) * 0.22,
-      r: Math.random() * 1.2 + 0.6,
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const lowPowerDevice =
+      (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) ||
+      navigator.hardwareConcurrency <= 4;
+
+    const particleCount = lowPowerDevice
+      ? 22
+      : window.innerWidth < 768
+        ? 28
+        : window.innerWidth < 1280
+          ? 34
+          : 42;
+
+    const particles: Particle[] = Array.from({ length: particleCount }).map(() => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.18,
+      vy: (Math.random() - 0.5) * 0.18,
+      r: Math.random() * 1 + 0.5,
     }));
 
-    const mouse = { x: 0, y: 0 };
-    const onMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
-    };
-    window.addEventListener("mousemove", onMove);
+    const mouse = { x: -9999, y: -9999 };
 
-    const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let raf = 0;
+    let lastTime = 0;
+    let width = 0;
+    let height = 0;
+    let pixelRatio = 1;
+    let isVisible = document.visibilityState === "visible";
+    let inViewport = true;
+
+    const frameInterval = lowPowerDevice ? 1000 / 24 : 1000 / 30;
+    const connectDistance = lowPowerDevice ? 95 : 115;
+
+    const toPx = (v: number, total: number) => v * total;
+
+    const resize = () => {
+      const rect = section.getBoundingClientRect();
+      width = Math.max(1, Math.floor(rect.width));
+      height = Math.max(1, Math.floor(rect.height));
+      pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+
+      canvas.width = Math.floor(width * pixelRatio);
+      canvas.height = Math.floor(height * pixelRatio);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+
+      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    };
+
+    const onPointerLeave = () => {
+      mouse.x = -9999;
+      mouse.y = -9999;
+    };
+
+    const schedule = () => {
+      if (raf || !isVisible || !inViewport) return;
+      raf = requestAnimationFrame(draw);
+    };
+
+    const draw = (time: number) => {
+      raf = 0;
+      if (!isVisible || !inViewport) return;
+
+      if (time - lastTime < frameInterval) {
+        schedule();
+        return;
+      }
+      lastTime = time;
+
+      ctx.clearRect(0, 0, width, height);
 
       const g = ctx.createRadialGradient(
-        canvas.width * 0.5,
-        canvas.height * 0.35,
+        width * 0.5,
+        height * 0.35,
         0,
-        canvas.width * 0.5,
-        canvas.height * 0.35,
-        Math.max(canvas.width, canvas.height) * 0.75
+        width * 0.5,
+        height * 0.35,
+        Math.max(width, height) * 0.72
       );
-      g.addColorStop(0, "rgba(255,255,255,0.06)");
+      g.addColorStop(0, "rgba(255,255,255,0.05)");
       g.addColorStop(1, "rgba(255,255,255,0)");
       ctx.fillStyle = g;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, width, height);
 
       particles.forEach((p, i) => {
-        p.x += p.vx;
-        p.y += p.vy;
+        const px = toPx(p.x, width);
+        const py = toPx(p.y, height);
 
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        p.x += p.vx / width;
+        p.y += p.vy / height;
+
+        if (p.x < 0 || p.x > 1) p.vx *= -1;
+        if (p.y < 0 || p.y > 1) p.vy *= -1;
 
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
+          const p2x = toPx(p2.x, width);
+          const p2y = toPx(p2.y, height);
+          const dx = px - p2x;
+          const dy = py - p2y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            ctx.strokeStyle = `rgba(255,255,255,${0.08 * (1 - dist / 140)})`;
+          if (dist < connectDistance) {
+            ctx.strokeStyle = `rgba(255,255,255,${0.06 * (1 - dist / connectDistance)})`;
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(px, py);
+            ctx.lineTo(p2x, p2y);
             ctx.stroke();
           }
         }
 
-        const mdx = p.x - mouse.x;
-        const mdy = p.y - mouse.y;
+        const mdx = px - mouse.x;
+        const mdy = py - mouse.y;
         const mdist = Math.sqrt(mdx * mdx + mdy * mdy);
-        if (mdist < 180) {
-          p.vx += mdx * 0.000008;
-          p.vy += mdy * 0.000008;
+        if (mdist < 150) {
+          p.vx += mdx * 0.000005;
+          p.vy += mdy * 0.000005;
         }
 
-        ctx.fillStyle = "rgba(255,255,255,0.22)";
+        ctx.fillStyle = "rgba(255,255,255,0.2)";
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.arc(px, py, p.r, 0, Math.PI * 2);
         ctx.fill();
       });
 
-      raf = requestAnimationFrame(draw);
+      schedule();
     };
 
-    draw();
+    const onVisibilityChange = () => {
+      isVisible = document.visibilityState === "visible";
+      if (isVisible) schedule();
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        inViewport = entry.isIntersecting;
+        if (inViewport) schedule();
+      },
+      { threshold: 0.06 }
+    );
+
+    resize();
+    observer.observe(section);
+    schedule();
+
+    section.addEventListener("pointermove", onPointerMove, { passive: true });
+    section.addEventListener("pointerleave", onPointerLeave);
+    window.addEventListener("resize", resize, { passive: true });
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
-      cancelAnimationFrame(raf);
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+      section.removeEventListener("pointermove", onPointerMove);
+      section.removeEventListener("pointerleave", onPointerLeave);
       window.removeEventListener("resize", resize);
-      window.removeEventListener("mousemove", onMove);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [reduceMotion]);
 
   return (
-    <section className="relative overflow-hidden">
+    <section ref={sectionRef} className="relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-blue-600 via-blue-700 to-blue-800" />
       <div className="absolute inset-0 bg-hero-grid opacity-[0.35]" />
       <div className="absolute inset-0 bg-scanlines opacity-[0.25]" />
@@ -181,7 +275,7 @@ export default function HomeHero() {
           transition={{ delay: 0.25, duration: 0.8 }}
           className="mx-auto mt-7 max-w-2xl text-blue-100/95"
         >
-          StockHorizon delivers real-time alerts, AI-ranked setups, and disciplined risk tooling —
+          StockHorizon delivers real-time alerts, AI-ranked setups, and disciplined risk tooling -
           built for serious traders who want speed and clarity.
         </motion.p>
 
@@ -202,8 +296,8 @@ export default function HomeHero() {
         </motion.div>
 
         <motion.div
-          animate={{ y: [0, 12, 0] }}
-          transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+          animate={reduceMotion ? undefined : { y: [0, 12, 0] }}
+          transition={reduceMotion ? undefined : { repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
           className="mt-16 flex justify-center text-white/70"
         >
           <ChevronDown size={28} />
